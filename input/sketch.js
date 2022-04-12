@@ -6,7 +6,6 @@ const LIFESPAN = 250;
 
 function setup() {
 	setupCanvas();
-	setupDrawingWorker();
 
 	setupCamera().then(() => {
 		setupTracking();
@@ -43,20 +42,7 @@ const setupTracking = () => {
 }
 
 
-let strokes = [];
-
-let calculationWorker;
-const setupDrawingWorker = () => {
-	calculationWorker = new Worker('/strokesWorker.js');
-	calculationWorker.postMessage({
-		action: 'setup',
-		HEIGHT,
-		WIDTH,
-	})
-	calculationWorker.onmessage = ({ data: updatedStrokes }) => {
-		strokes = updatedStrokes;
-	}
-}
+const activeStrokes = {};
 
 const randomColor = () => Math.round(255 * Math.random());
 
@@ -79,6 +65,44 @@ const strokeBristle = ([ox, oy], [dx, dy], [cx, cy], bristle) => {
 
 };
 
+const drawStrokes = strokes => {
+	for (const { creationFrameCount, coords } of strokes) {
+		const [{ x: originX, y: originY }, ...points] = coords;
+		const alpha = 255 * (1 - ((frameCount - creationFrameCount) / LIFESPAN));
+		stroke(255, 0, 0, alpha);
+		noFill();
+		strokeWeight(5);
+
+		beginShape();
+		vertex(originX, originY);
+
+		for (var i = 0; i < points.length - 1; i++) {
+			var x_mid = (points[i].x + points[i + 1].x) / 2;
+			var y_mid = (points[i].y + points[i + 1].y) / 2;
+			var cp_x1 = (x_mid + points[i].x) / 2;
+			var cp_x2 = (x_mid + points[i + 1].x) / 2;
+			quadraticVertex(cp_x1, points[i].y, x_mid, y_mid);
+			quadraticVertex(cp_x2, points[i + 1].y, points[i + 1].x, points[i + 1].y);
+		}
+		endShape();
+	}
+}
+
+const updateActiveStrokes = blobs => {
+	for (const { creationFrameCount, id, normRectH: h, normRectW: w, normRectX: x, normRectY: y } of blobs) {
+		const uid = `${id}_${creationFrameCount}`;
+		const centreX = (x + (w / 2)) * WIDTH;
+		const centreY = (y + (h / 2)) * HEIGHT;
+
+		const activeStroke = activeStrokes[uid] ?? { creationFrameCount, coords: [], uid };
+
+		activeStrokes[uid] = {
+			...activeStroke,
+			coords: [...activeStroke.coords, { x: centreX, y: centreY }]
+		}
+	}
+}
+
 function draw() {
 	if (typeof myVida === 'undefined') {
 		return;
@@ -88,29 +112,7 @@ function draw() {
 	background(0, 0, 0)
 
 	const blobs = myVida.getBlobs()
-	const simpleBlobs = blobs.map(({ creationFrameCount, id, normRectH: h, normRectW: w, normRectX: x, normRectY: y }) => ({ creationFrameCount, id, h, w, x, y }))
-	calculationWorker.postMessage({ action: 'addBlobs', blobs: simpleBlobs });
+	updateActiveStrokes(blobs);
 
-	noFill()
-	let iteration = 0;
-	for (const { creationFrameCount, color: [r, g, b], coords, bristles, brush } of strokes) {
-		beginShape();
-
-		const alpha = 255 * (1 - ((frameCount - creationFrameCount) / LIFESPAN));
-
-		if (alpha === 0) { }
-		stroke(r, g, b, alpha);
-
-		drawingContext.shadowColor = `rgb(${r}, ${g}, ${b})`;
-		strokeCap(ROUND);
-
-		for (var i = 0; i < bristles.length; i++) {
-			for (var y = 0; y < bristles[i].length; y++) {
-				const [bristleOrigin, bristleDestination, controlPoint] = bristles[i][y];
-				strokeBristle(bristleOrigin, bristleDestination, controlPoint, brush[y]);
-				iteration++
-			}
-		}
-		endShape();
-	}
+	drawStrokes(Object.values(activeStrokes));
 }
