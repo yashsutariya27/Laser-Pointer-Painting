@@ -1,0 +1,25 @@
+{
+	"name": "cave-painting",
+	"version": "1.0.0",
+	"description": "",
+	"main": "saveWorker.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "nodemon server.js",
+		"start": "node server.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Runeii/cave-painting.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Runeii/cave-painting/issues"
+	},
+	"homepage": "https://github.com/Runeii/cave-painting#readme",
+	"dependencies": {
+		"express": "^4.17.3",
+		"socket.io": "^4.4.1"
+	}
+}
