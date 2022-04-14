@@ -1,3 +1,8 @@
+const LOWEST_MASS = 0.0000001;
+const HIGHEST_MASS = 0.2;
+const LOWEST_AREA = 0.0000001;
+const HIGHEST_AREA = 0.1;
+
 const CAMERA_RES = 1920 / 1080;
 
 const WIDTH = window.innerWidth;
@@ -22,10 +27,11 @@ socket.on('reload', id => {
 function setup() {
 	setupCanvas();
 	setupSaveWorker();
-
-	setupCamera().then(() => {
-		setupTracking();
-	})
+	window.setTimeout(() => {
+		setupCamera().then(() => {
+			setupTracking();
+		})
+	}, 3000);
 }
 
 const setupCanvas = () => {
@@ -34,7 +40,7 @@ const setupCanvas = () => {
 
 const setupCamera = () => new Promise(resolve => {
 	capture = createCapture(VIDEO, () => {
-		capture.size(640, 480);
+		capture.size(640, 340);
 		capture.hide();
 		resolve();
 	});
@@ -47,30 +53,25 @@ const setupSaveWorker = () => {
 const setupTracking = () => {
 	myVida = new Vida(this);
 	myVida.progressiveBackgroundFlag = false;
-	myVida.imageFilterThreshold = 0.2;
+	myVida.imageFilterThreshold = 0.1;
 	myVida.handleBlobsFlag = true;
 	myVida.trackBlobsFlag = true;
 	myVida.approximateBlobPolygonsFlag = false;
-	myVida.pointsPerApproximatedBlobPolygon = 8;
+	myVida.pointsPerApproximatedBlobPolygon = 1;
 
-	myVida.normMinBlobMass = 0.00000001;  // uncomment if needed
-	myVida.normMinBlobArea = 0.00000001;  // uncomment if needed
+	myVida.normMinBlobMass = LOWEST_MASS;
+	myVida.normMaxBlobMass = HIGHEST_MASS;
+	myVida.normMinBlobArea = LOWEST_AREA;
+	myVida.normMaxBlobArea = HIGHEST_AREA;
 
 	myVida.setBackgroundImage(capture);
-	frameRate(30);
+	frameRate(60);
 }
 
 const randomColor = () => Math.round(255 * Math.random());
 
-let brushDiameter = 5;
-const drawChalk = (x, y, chalk) => {
-	vertex(x, y)
-	fill(0, 0, 0)
-	chalk.map(([a, b, c, d]) => rect(a, b, c, d));
-}
-
 const drawStrokes = strokes => {
-	for (const { chalkCoords, coords, lastSeenFrame, uid } of strokes) {
+	for (const { chalkCoords, color, coords, lastSeenFrame, uid } of strokes) {
 		const alpha = lastSeenFrame === frameCount ? 255 : 255 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
 			saveWorker.postMessage(JSON.stringify(activeStrokes[uid]))
@@ -78,14 +79,14 @@ const drawStrokes = strokes => {
 			continue;
 		}
 
-		stroke(255, 0, 0, alpha);
+		stroke(color[0], color[1], color[2], alpha);
 		noFill();
-		strokeWeight(brushDiameter);
+		strokeWeight(5);
 		strokeCap(ROUND);
 
 		beginShape();
 		for (var i = 1; i < coords.length - 1; i++) {
-			drawChalk(coords[i].x, coords[i].y, chalkCoords[i])
+			vertex(coords[i].x, coords[i].y)
 		}
 		endShape();
 	}
@@ -94,34 +95,24 @@ const drawStrokes = strokes => {
 const updateActiveStrokes = blobs => {
 	for (const { creationFrameCount, id, normRectH: h, normRectW: w, normRectX: x, normRectY: y } of blobs) {
 		const uid = `${id}_${creationFrameCount}`;
-		const centreX = (x + (w / 2)) * WIDTH;
+
+		const halfWidth = WIDTH / 2;
+		const rawX = (x + (w / 2)) * WIDTH;
+
+		const distanceFromCentre = rawX - halfWidth;
+		const adjustedDistanceFromCentre = distanceFromCentre > 0 ? distanceFromCentre * 0.66666666666 : distanceFromCentre / 1.3333333333
+		const centreX = halfWidth + adjustedDistanceFromCentre;
 		const centreY = (y + (h / 2)) * HEIGHT;
 
-		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid };
-		const { coords } = activeStroke;
-		const chalk = [];
-		const xLast = coords.length > 0 ? coords.at(-1) : centreX
-		const yLast = coords.length > 0 ? coords.at(-1) : centreY
-
-		// Chalk Effect
-		var length = Math.round(Math.sqrt(Math.pow(centreX - xLast, 2) + Math.pow(centreY - yLast, 2)) / (5 / brushDiameter));
-		var xUnit = (centreX - xLast) / length;
-		var yUnit = (centreY - yLast) / length;
-		for (var i = 0; i < length; i++) {
-			var xCurrent = xLast + (i * xUnit);
-			var yCurrent = yLast + (i * yUnit);
-			var xRandom = xCurrent + (Math.random() - 0.5) * brushDiameter * 1.2;
-			var yRandom = yCurrent + (Math.random() - 0.5) * brushDiameter * 1.2;
-			chalk.push([xRandom, yRandom, Math.random() * 2 + 2, Math.random() + 1]);
-		}
+		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: [randomColor(), randomColor(), randomColor()] };
 
 		activeStrokes[uid] = {
 			...activeStroke,
-			chalkCoords: [...activeStroke.chalkCoords, chalk],
 			coords: [...activeStroke.coords, { x: centreX, y: centreY }],
 			lastSeenFrame: frameCount
 		}
 	}
+	socket.emit('debug', blobs.map(({ creationFrameCount, id, normMass, normRectW, normRectH }) => ({ mass: normMass, area: (normRectW * normRectH), uid: `${id}_${creationFrameCount}` })))
 }
 
 function draw() {
@@ -134,6 +125,5 @@ function draw() {
 
 	const blobs = myVida.getBlobs()
 	updateActiveStrokes(blobs);
-
 	drawStrokes(Object.values(activeStrokes));
 }

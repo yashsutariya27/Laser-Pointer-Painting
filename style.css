@@ -1,9 +1,14 @@
 html, body {
 	margin: 0;
 	padding: 0;
+	background-color: black;
 }
 
 canvas {
 	display: block;
 	width: 100vw;
+}
+
+td {
+	border: 1px solid white;
 }
