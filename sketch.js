@@ -74,7 +74,7 @@ const drawStrokes = strokes => {
 	for (const { chalkCoords, color, coords, lastSeenFrame, uid } of strokes) {
 		const alpha = lastSeenFrame === frameCount ? 255 : 255 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
-			saveWorker.postMessage(JSON.stringify(activeStrokes[uid]))
+			socket.emit('commitShape', JSON.stringify(activeStrokes[uid]));
 			delete (activeStrokes[uid]);
 			continue;
 		}

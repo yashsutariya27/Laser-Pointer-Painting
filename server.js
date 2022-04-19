@@ -2,10 +2,17 @@ const { join } = require('path');
 const { Server } = require("socket.io");
 const http = require('http');
 const express = require('express')
+const { createClient } = require('@supabase/supabase-js');
+
 const app = express()
 
 const server = http.createServer(app);
 const io = new Server(server);
+
+const supabase = createClient(
+	process.env.SUPABASE_URL,
+	process.env.SUPABASE_ANON_KEY,
+);
 
 app.get('/', (req, res) => {
 	res.sendFile(join(__dirname, '/index.html'));
@@ -34,5 +41,15 @@ io.on('connection', function (socket) {
 	});
 	socket.on('debugX', (args) => {
 		io.emit('debugX', args)
+	});
+	socket.on('commitShape', (json) => {
+		const { data, error } = await supabase
+			.from('shapes')
+			.insert(
+				[
+					{ json }
+				]
+			);
+		console.log(error ?? data);
 	});
 });
