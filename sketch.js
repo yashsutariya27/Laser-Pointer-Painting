@@ -25,6 +25,13 @@ socket.on('reload', id => {
 
 function setup() {
 	setupCanvas();
+
+	caveHand = loadImage('caveHand.png')
+	softBrush = loadImage('softBrush.png');
+	brushSize = 100;
+	imageMode(CENTER);
+	colorMode(HSB);
+
 	window.setTimeout(() => {
 		setupCamera().then(() => {
 			setupTracking();
@@ -64,8 +71,20 @@ const setupTracking = () => {
 
 const randomColor = () => Math.round(255 * Math.random());
 
+// FROM SKETCH
+
+const earthTone = [
+	{ hex: '#9B8F77', hsb: 'hsb(40, 23%, 61%)', color: 'gobi' },
+	{ hex: '#9F8B84', hsb: 'hsb(16, 17%, 62%)', color: 'mocha' },
+	{ hex: '#CCBDB6', hsb: 'hsb(19, 11%, 80%)', color: 'dusk' },
+	{ hex: '#CBC2BB', hsb: 'hsb(26, 8%, 80%)', color: 'limestone' },
+	{ hex: '#CCC4B7', hsb: 'hsb(37, 10%, 80%)', color: 'dolomite' },
+	{ hex: '#919596', hsb: 'hsb(192, 3%, 59%)', color: 'shale' },
+	{ hex: '#ACAFB6', hsb: 'hsb(222, 5%, 71%)', color: 'graphite' }
+]
+
 const drawStrokes = strokes => {
-	for (const { creationFrameCount, color, coords, lastSeenFrame, uid } of strokes) {
+	for (const { creationFrameCount, color: strokeColor, coords, lastSeenFrame, uid } of strokes) {
 		const alpha = lastSeenFrame === frameCount ? 255 : 255 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
 			if (lastSeenFrame - creationFrameCount > 6 && coords.length > 2) {
@@ -75,16 +94,23 @@ const drawStrokes = strokes => {
 			continue;
 		}
 
-		stroke(color[0], color[1], color[2], alpha);
-		noFill();
-		strokeWeight(5);
-		strokeCap(ROUND);
-
-		beginShape();
 		for (var i = 1; i < coords.length - 1; i++) {
-			vertex(coords[i].x, coords[i].y)
+			//translate(coords[i].x, coords[i].y)
+			const xDistance = coords[i].x - coords[i - 1].x
+			const yDistance = coords[i].y - coords[i - 1].y
+
+			tint(color(strokeColor));
+			stroke(color(strokeColor));
+			noFill();
+			strokeWeight(5);
+			strokeCap(ROUND);
+
+			for (var i = 1; i < coords.length - 1; i++) {
+				image(softBrush, coords[i].x, coords[i].y, brushSize, brushSize);
+				image(caveHand, coords[i].x, coords[i].y, brushSize, brushSize);
+			}
+			//rotate(frameCount * 0.01);
 		}
-		endShape();
 	}
 }
 
@@ -100,7 +126,7 @@ const updateActiveStrokes = blobs => {
 		const centreX = halfWidth + adjustedDistanceFromCentre;
 		const centreY = (y + (h / 2)) * HEIGHT;
 
-		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: [randomColor(), randomColor(), randomColor()] };
+		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: earthTone[0].hsb };
 
 		activeStrokes[uid] = {
 			...activeStroke,
