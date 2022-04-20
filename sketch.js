@@ -23,11 +23,21 @@ socket.on('reload', id => {
 	currentId = id;
 });
 
-function setup() {
-	setupCanvas();
+let ctx
+async function setup() {
+	const canvas = setupCanvas();
 
-	caveHand = loadImage('caveHand.png')
-	softBrush = loadImage('softBrush.png');
+	caveHand = await new Promise((resolve) => loadImage('caveHand.png', resolve));
+	softBrush = await new Promise((resolve) => loadImage('softBrush.png', resolve));
+
+	cursors = Object.fromEntries(earthTone.map(({ color: name, hex }) => {
+		cursor = createGraphics(20, 20)
+		cursor.image(softBrush, 0, 0, 20, 20)
+		cursor.image(caveHand, 0, 0, 20, 20)
+		cursor.tint(color(hex));
+		return [name, cursor];
+	}));
+
 	brushSize = 100;
 	imageMode(CENTER);
 	colorMode(HSB);
@@ -40,7 +50,8 @@ function setup() {
 }
 
 const setupCanvas = () => {
-	createCanvas(WIDTH, HEIGHT);
+	const canvas = createCanvas(WIDTH, HEIGHT);
+	return canvas;
 }
 
 const setupCamera = () => new Promise(resolve => {
@@ -83,8 +94,9 @@ const earthTone = [
 	{ hex: '#ACAFB6', hsb: '222, 5%, 71%', color: 'graphite' }
 ]
 
+
 const drawStrokes = strokes => {
-	for (const { creationFrameCount, color: strokeColor, coords, lastSeenFrame, uid } of strokes) {
+	for (const { creationFrameCount, color: tintColor, coords, lastSeenFrame, uid } of strokes) {
 		const alpha = lastSeenFrame === frameCount ? 1 : 1 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
 			if (lastSeenFrame - creationFrameCount > 6 && coords.length > 2) {
@@ -99,16 +111,12 @@ const drawStrokes = strokes => {
 			//translate(coords[i].x, coords[i].y)
 			const xDistance = coords[i].x - coords[i - 1].x
 			const yDistance = coords[i].y - coords[i - 1].y
-			console.log(`hsba(${strokeColor}, ${alpha})`)
+
 			//			tint(color(strokeColor));
 			noFill();
-			strokeWeight(5);
-			strokeCap(ROUND);
-			tint(color(`hsba(${strokeColor}, ${alpha})`));
 
 			for (var i = 1; i < coords.length - 1; i++) {
-				image(softBrush, coords[i].x, coords[i].y, brushSize, brushSize);
-				image(caveHand, coords[i].x, coords[i].y, brushSize, brushSize);
+				image(cursors[tintColor], coords[i].x, coords[i].y)
 			}
 			//rotate(frameCount * 0.01);
 		}
@@ -127,7 +135,8 @@ const updateActiveStrokes = blobs => {
 		const centreX = halfWidth + adjustedDistanceFromCentre;
 		const centreY = (y + (h / 2)) * HEIGHT;
 
-		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: earthTone[Math.round(earthTone.length * Math.random())].hsb };
+		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: earthTone[Math.round((earthTone.length - 1) * Math.random())].color };
+
 
 		activeStrokes[uid] = {
 			...activeStroke,
