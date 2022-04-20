@@ -10,10 +10,9 @@ const HEIGHT = window.innerWidth / CAMERA_RES;
 const LIFESPAN = 100;
 
 const activeStrokes = {};
-let saveWorker;
 
-
-var socket = io.connect('http://10.112.10.93:3000');
+//var socket = io.connect('http://10.112.10.93:3000');
+var socket = io.connect('http://localhost:3000');
 
 let currentId = null;
 socket.on('reload', id => {
@@ -26,7 +25,6 @@ socket.on('reload', id => {
 
 function setup() {
 	setupCanvas();
-	setupSaveWorker();
 	window.setTimeout(() => {
 		setupCamera().then(() => {
 			setupTracking();
@@ -45,10 +43,6 @@ const setupCamera = () => new Promise(resolve => {
 		resolve();
 	});
 });
-
-const setupSaveWorker = () => {
-	saveWorker = new Worker('/saveWorker.js');
-}
 
 const setupTracking = () => {
 	myVida = new Vida(this);
@@ -71,10 +65,12 @@ const setupTracking = () => {
 const randomColor = () => Math.round(255 * Math.random());
 
 const drawStrokes = strokes => {
-	for (const { chalkCoords, color, coords, lastSeenFrame, uid } of strokes) {
+	for (const { creationFrameCount, color, coords, lastSeenFrame, uid } of strokes) {
 		const alpha = lastSeenFrame === frameCount ? 255 : 255 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
-			socket.emit('commitShape', JSON.stringify(activeStrokes[uid]));
+			if (lastSeenFrame - creationFrameCount > 6 && coords.length > 2) {
+				socket.emit('commitShape', activeStrokes[uid], WIDTH, HEIGHT);
+			}
 			delete (activeStrokes[uid]);
 			continue;
 		}

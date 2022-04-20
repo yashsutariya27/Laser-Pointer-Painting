@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { join } = require('path');
 const { Server } = require("socket.io");
 const http = require('http');
@@ -42,12 +43,17 @@ io.on('connection', function (socket) {
 	socket.on('debugX', (args) => {
 		io.emit('debugX', args)
 	});
-	socket.on('commitShape', (json) => {
+	socket.on('commitShape', async ({ color, creationFrameCount, lastSeenFrame, coords }, width, height) => {
 		const { data, error } = await supabase
 			.from('shapes')
 			.insert(
 				[
-					{ json }
+					{
+						color,
+						start: creationFrameCount,
+						end: lastSeenFrame,
+						coords: JSON.stringify(coords.map(({ x, y }) => ({ x: x / width, y: y / height }))),
+					}
 				]
 			);
 		console.log(error ?? data);
