@@ -32,15 +32,15 @@ async function setup() {
 
 	cursors = Object.fromEntries(earthTone.map(({ color: name, hex }) => {
 		cursor = createGraphics(20, 20)
+		cursor.tint(color(hex));
 		cursor.image(softBrush, 0, 0, 20, 20)
 		cursor.image(caveHand, 0, 0, 20, 20)
-		cursor.tint(color(hex));
 		return [name, cursor];
 	}));
 
 	brushSize = 100;
-	imageMode(CENTER);
 	colorMode(HSB);
+	angleMode(DEGREES)
 
 	window.setTimeout(() => {
 		setupCamera().then(() => {
@@ -94,6 +94,16 @@ const earthTone = [
 	{ hex: '#ACAFB6', hsb: '222, 5%, 71%', color: 'graphite' }
 ]
 
+// Works for inverted canvas coordinate system
+const getAngle = (originX, originY, targetX, targetY) => {
+	var dx = originX - targetX;
+	var dy = originY - targetY;
+	var theta = Math.atan2(-dy, -dx); // [0, Ⲡ] then [-Ⲡ, 0]; clockwise; 0° = east
+	theta *= 180 / Math.PI;           // [0, 180] then [-180, 0]; clockwise; 0° = east
+	if (theta < 0) theta += 360;      // [0, 360]; clockwise; 0° = east
+
+	return theta;
+}
 
 const drawStrokes = strokes => {
 	for (const { creationFrameCount, color: tintColor, coords, lastSeenFrame, uid } of strokes) {
@@ -109,15 +119,15 @@ const drawStrokes = strokes => {
 
 		for (var i = 1; i < coords.length - 1; i++) {
 			//translate(coords[i].x, coords[i].y)
-			const xDistance = coords[i].x - coords[i - 1].x
-			const yDistance = coords[i].y - coords[i - 1].y
+			const angle = getAngle(coords[i].x, coords[i].y, coords[i - 1].x, coords[i - 1].y)
 
 			//			tint(color(strokeColor));
-			noFill();
-
-			for (var i = 1; i < coords.length - 1; i++) {
-				image(cursors[tintColor], coords[i].x, coords[i].y)
-			}
+			push()
+			translate(coords[i].x, coords[i].y);
+			imageMode(CENTER);
+			rotate(angle * (i % 3 === 0 ? -1 : 1))
+			image(cursors[tintColor], 0, 0)
+			pop()
 			//rotate(frameCount * 0.01);
 		}
 	}
@@ -136,7 +146,6 @@ const updateActiveStrokes = blobs => {
 		const centreY = (y + (h / 2)) * HEIGHT;
 
 		const activeStroke = activeStrokes[uid] ?? { chalkCoords: [], creationFrameCount, coords: [], uid, color: earthTone[Math.round((earthTone.length - 1) * Math.random())].color };
-
 
 		activeStrokes[uid] = {
 			...activeStroke,
