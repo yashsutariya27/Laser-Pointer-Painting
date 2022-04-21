@@ -11,8 +11,8 @@ const LIFESPAN = 50;
 
 const activeStrokes = {};
 
-var socket = io.connect('http://10.112.10.93:3000');
-//var socket = io.connect('http://localhost:3000');
+//var socket = io.connect('http://10.112.10.93:3000');
+var socket = io.connect('http://localhost:3000');
 
 let currentId = null;
 socket.on('reload', id => {
@@ -30,15 +30,15 @@ async function setup() {
 	caveHand = await new Promise((resolve) => loadImage('caveHand.png', resolve));
 	softBrush = await new Promise((resolve) => loadImage('softBrush.png', resolve));
 
+	brushSize = windowHeight / 9;
 	cursors = Object.fromEntries(earthTone.map(({ color: name, hex }) => {
-		cursor = createGraphics(20, 20)
+		cursor = createGraphics(brushSize, brushSize)
 		cursor.tint(color(hex));
-		cursor.image(softBrush, 0, 0, 20, 20)
-		cursor.image(caveHand, 0, 0, 20, 20)
+		cursor.image(softBrush, 0, 0, brushSize, brushSize)
+		cursor.image(caveHand, 0, 0, brushSize, brushSize)
 		return [name, cursor];
 	}));
 
-	brushSize = windowHeight / 9;
 	colorMode(HSB);
 	angleMode(DEGREES)
 
@@ -117,18 +117,18 @@ const drawStrokes = strokes => {
 			continue;
 		}
 
-		for (var i = 1; i < coords.length - 1; i++) {
-			//translate(coords[i].x, coords[i].y)
-			const angle = getAngle(coords[i].x, coords[i].y, coords[i - 1].x, coords[i - 1].y)
-
-			//			tint(color(strokeColor));
+		for (var i = 1; i < coords.length; i++) {
 			push()
 			translate(coords[i].x, coords[i].y);
 			imageMode(CENTER);
-			rotate(angle * (i % 3 === 0 ? -1 : 1))
-			image(cursors[tintColor], 0, 0)
+			if (i === coords.length - 1) {
+				rotate(coords[i].angle)
+				scale(-1, -1)
+			} else {
+				rotate(coords[i].angle)
+			}
+			image(cursors[tintColor], 0, 0, brushSize, brushSize)
 			pop()
-			//rotate(frameCount * 0.01);
 		}
 	}
 }
@@ -149,7 +149,11 @@ const updateActiveStrokes = blobs => {
 
 		activeStrokes[uid] = {
 			...activeStroke,
-			coords: [...activeStroke.coords, { x: centreX, y: centreY }],
+			coords: [...activeStroke.coords, {
+				x: centreX,
+				y: centreY,
+				angle: activeStroke.coords.length > 0 ? getAngle(centreX, centreY, activeStroke.coords.at(-1).x, activeStroke.coords.at(-1).y) : 0,
+			}],
 			lastSeenFrame: frameCount
 		}
 	}
