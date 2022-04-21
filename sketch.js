@@ -123,7 +123,6 @@ const drawStrokes = strokes => {
 			imageMode(CENTER);
 			if (i === coords.length - 1) {
 				rotate(coords[i].angle)
-				scale(-1, -1)
 			} else {
 				rotate(coords[i].angle)
 			}
