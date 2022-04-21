@@ -11,8 +11,8 @@ const LIFESPAN = 50;
 
 const activeStrokes = {};
 
-//var socket = io.connect('http://10.112.10.93:3000');
-var socket = io.connect('http://localhost:3000');
+var socket = io.connect('http://10.112.10.93:3000');
+//var socket = io.connect('http://localhost:3000');
 
 let currentId = null;
 socket.on('reload', id => {
@@ -38,7 +38,7 @@ async function setup() {
 		return [name, cursor];
 	}));
 
-	brushSize = 100;
+	brushSize = windowHeight / 9;
 	colorMode(HSB);
 	angleMode(DEGREES)
 
