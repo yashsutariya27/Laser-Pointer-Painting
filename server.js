@@ -43,19 +43,22 @@ io.on('connection', function (socket) {
 	socket.on('debugX', (args) => {
 		io.emit('debugX', args)
 	});
-	socket.on('commitShape', async ({ color, creationFrameCount, lastSeenFrame, coords }, width, height) => {
+	socket.on('commitShape', async ({ color, creationFrameCount, lastSeenFrame, coords }, width, height, earthTones) => {
+		const rgb = earthTones.find(({ color: name }) => name === color).rgb
 		const { data, error } = await supabase
 			.from('shapes')
 			.insert(
 				[
 					{
-						color,
+						color: rgb,
 						start: creationFrameCount,
 						end: lastSeenFrame,
 						coords: JSON.stringify(coords.map(({ x, y }) => ({ x: x / width, y: y / height }))),
 					}
 				]
 			);
-		console.log(error ?? data);
+		if (error) {
+			console.log(error);
+		}
 	});
 });

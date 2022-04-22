@@ -31,9 +31,9 @@ async function setup() {
 	softBrush = await new Promise((resolve) => loadImage('softBrush.png', resolve));
 
 	brushSize = windowHeight / 9;
-	cursors = Object.fromEntries(earthTone.map(({ color: name, hex }) => {
+	cursors = Object.fromEntries(earthTone.map(({ color: name, rgb }) => {
 		cursor = createGraphics(brushSize, brushSize)
-		cursor.tint(color(hex));
+		cursor.tint(color(rgb));
 		cursor.image(softBrush, 0, 0, brushSize, brushSize)
 		cursor.image(caveHand, 0, 0, brushSize, brushSize)
 		return [name, cursor];
@@ -85,13 +85,11 @@ const randomColor = () => Math.round(255 * Math.random());
 // FROM SKETCH
 
 const earthTone = [
-	{ hex: '#9B8F77', hsb: '40, 23%, 61%', color: 'gobi' },
-	{ hex: '#9F8B84', hsb: '16, 17%, 62%', color: 'mocha' },
-	{ hex: '#CCBDB6', hsb: '19, 11%, 80%', color: 'dusk' },
-	{ hex: '#CBC2BB', hsb: '26, 8%, 80%', color: 'limestone' },
-	{ hex: '#CCC4B7', hsb: '37, 10%, 80%', color: 'dolomite' },
-	{ hex: '#919596', hsb: '192, 3%, 59%', color: 'shale' },
-	{ hex: '#ACAFB6', hsb: '222, 5%, 71%', color: 'graphite' }
+	{ hex: '#BF9B52', rgb: 'rgb(191, 155, 82)', color: 'gobi' },
+	{ hex: '#C6785D', rgb: 'rgb(198, 120, 93)', color: 'mocha' },
+	{ hex: '#836D9E', rgb: 'rgb(131, 109, 158)', color: 'dusk' },
+	{ hex: '#E5A573', rgb: 'rgb(229, 165, 115)', color: 'limestone' },
+	{ hex: '#708050', rgb: 'rgb(112, 128, 80)', color: 'dolomite' },
 ]
 
 // Works for inverted canvas coordinate system
@@ -110,7 +108,7 @@ const drawStrokes = strokes => {
 		const alpha = lastSeenFrame === frameCount ? 1 : 1 * (1 - ((frameCount - lastSeenFrame) / LIFESPAN));
 		if (alpha <= 0) {
 			if (lastSeenFrame - creationFrameCount > 6 && coords.length > 2) {
-				socket.emit('commitShape', activeStrokes[uid], WIDTH, HEIGHT);
+				socket.emit('commitShape', activeStrokes[uid], WIDTH, HEIGHT, earthTone);
 			}
 			delete (activeStrokes[uid]);
 			console.log('delete', uid, activeStrokes)
