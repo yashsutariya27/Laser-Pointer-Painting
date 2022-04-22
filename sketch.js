@@ -124,6 +124,7 @@ const drawStrokes = strokes => {
 			} else {
 				rotate(coords[i].angle)
 			}
+			tint(255, alpha)
 			image(cursors[tintColor], 0, 0, brushSize, brushSize)
 			pop()
 		}
