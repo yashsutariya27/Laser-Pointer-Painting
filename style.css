@@ -1,3 +1,8 @@
+@font-face {
+	font-family: 'Random Regular';
+	src: url('/fonts/Random-Regular.woff2') format('woff2');
+}
+
 html, body {
 	margin: 0;
 	padding: 0;
