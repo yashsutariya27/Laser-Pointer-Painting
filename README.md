@@ -9,7 +9,7 @@ Draw cave paintings on a wall using a laser pointer
 * Laser pointers
 
 ## Developing client
-*  npm run dev will launch with nodemon
+*  `npm run dev `will launch with nodemon
 *  FE will reload automatically on file save
 *  An additional `/debug` route can be opened on a separate device/window, which will stream details of currently registered shapes
 
@@ -18,7 +18,7 @@ Draw cave paintings on a wall using a laser pointer
     *  Disable aperture priority mode, ensure exposure mode is set to fixed/manual
     *  Reduce exposure until only visible light source is laser pointer on projection wall
 *  `npm run start` will launch application on `:3000`
-*  Open Chrome and fullscreen page
+*  Open `localhost:3000` in Chrome and fullscreen page
 
 ## Replaying shapes
 *  Each time a shape has vanished, it will be sent via socket to the FE server
