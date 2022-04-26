@@ -20,7 +20,7 @@ Draw cave paintings on a wall using a laser pointer
 *  `npm run start` will launch application on `:3000`
 *  Open Chrome and fullscreen page
 
-## Displaying shapes
+## Replaying shapes
 *  Each time a shape has vanished, it will be sent via socket to the FE server
 *  FE server submits details to a Supabase database
 *  Shapes can then later be reproduced, either in *realtime* or at a later date in a timeline format
