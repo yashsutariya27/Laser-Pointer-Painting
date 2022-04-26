@@ -1,4 +1,4 @@
-# Cave Painting
+# Laser Pointer Cave Painting
 Draw cave paintings on a wall using a laser pointer
 
 ## Setup
