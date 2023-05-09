@@ -1,5 +1,8 @@
 # Laser Pointer Cave Painting
-Draw cave paintings on a wall using a laser pointer
+Draw cave paintings on a wall using a laser pointer. Live data feed is provided for reproducing drawings in realtime on a digital twin.
+
+https://github.com/RandomStudio/Laser-Pointer-Painting/assets/5897209/5d5f69d4-b4cc-454c-96a5-4f096b848288
+
 
 ## Setup
 * Machine running this client
@@ -24,4 +27,4 @@ Draw cave paintings on a wall using a laser pointer
 *  Each time a shape has vanished, it will be sent via socket to the FE server
 *  FE server submits details to a Supabase database
 *  Shapes can then later be reproduced, either in *realtime* or at a later date in a timeline format
-*  An example of how to consume data can be found, here: https://github.com/RandomStudio/random-studio/tree/master/src/components/PartyHeader
+*  An example of how to consume data can be found, here: [https://github.com/RandomStudio/random-studio/tree/master/src/components/PartyHeader](https://github.com/RandomStudio/random-studio/blob/cfcfcaacbf8b69440648f21000a936ec57275360/src/components/PartyHeader/PartyHeader.js)
