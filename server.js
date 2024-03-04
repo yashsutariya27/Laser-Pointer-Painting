@@ -11,54 +11,54 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const supabase = createClient(
-	process.env.SUPABASE_URL,
-	process.env.SUPABASE_ANON_KEY,
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY,
 );
 
 app.get('/', (req, res) => {
-	res.sendFile(join(__dirname, '/index.html'));
+  res.sendFile(join(__dirname, '/index.html'));
 })
 
 app.get('/test', (req, res) => {
-	res.sendFile(join(__dirname, '/test.html'));
+  res.sendFile(join(__dirname, '/test.html'));
 })
 
 app.get('/debug', (req, res) => {
-	res.sendFile(join(__dirname, '/debug.html'));
+  res.sendFile(join(__dirname, '/debug.html'));
 })
 
 app.use(express.static('.'))
 
 server.listen(3000, () => {
-	console.log('listening on *:3000');
-	server.emit('reload')
+  console.log('listening on *:3000');
+  server.emit('reload')
 });
 
 let id = Math.random();
 io.on('connection', function (socket) {
-	io.emit('reload', id)
-	socket.on('debug', (args) => {
-		io.emit('debug', args)
-	});
-	socket.on('debugX', (args) => {
-		io.emit('debugX', args)
-	});
-	socket.on('commitShape', async ({ color, creationFrameCount, lastSeenFrame, coords }, width, height, earthTones) => {
-		const rgb = earthTones.find(({ color: name }) => name === color).rgb
-		const { data, error } = await supabase
-			.from('shapes')
-			.insert(
-				[
-					{
-						color: rgb,
-						start: creationFrameCount,
-						end: lastSeenFrame,
-						coords: JSON.stringify(coords.map(({ x, y }) => ({ x: x / width, y: y / height }))),
-					}
-				]
-			);
-		if (error) {
-			console.log(error);
-		}
-	});
+  io.emit('reload', id)
+  socket.on('debug', (args) => {
+    io.emit('debug', args)
+  });
+  socket.on('debugX', (args) => {
+    io.emit('debugX', args)
+  });
+  socket.on('commitShape', async ({ color, creationFrameCount, lastSeenFrame, coords }, width, height, earthTones) => {
+    const rgb = earthTones.find(({ color: name }) => name === color).rgb
+    const { data, error } = await supabase
+      .from('postparty_shapes')
+      .insert(
+        [
+          {
+            color: rgb,
+            start: creationFrameCount,
+            end: lastSeenFrame,
+            coords: JSON.stringify(coords.map(({ x, y }) => ({ x: x / width, y: y / height }))),
+          }
+        ]
+      );
+    if (error) {
+      console.log(error);
+    }
+  });
 });
